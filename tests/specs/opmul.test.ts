@@ -84,19 +84,48 @@ describe('Test SmartContract `Opmul`', () => {
 
     const int32max = 2n ** 31n - 1n
 
+    // success
     testUnlock(int32max, 1n)
     testUnlock(1n, int32max)
 
     testUnlock(int32max, 0n)
     testUnlock(0n, int32max)
 
-    const N = BigInt(Math.floor(Math.random() * 100) + 10)
+    const N = BigInt(Math.max(100, Math.floor(Math.random() * 1000)))
 
     console.log('N:', N)
     for (let i = 1n; i < 2n ** 15n; ) {
         testUnlock(i, int32max / i)
         testUnlock(-1n * i, int32max / i)
         testUnlock(int32max / i, i)
+        testUnlock((-1n * int32max) / i, i)
         i += N
+    }
+
+    // fail if b < 0
+
+    const FAIL_ERR_STR = 'SCRIPT_ERR_VERIFY'
+
+    for (let i = 1n; i < 2n ** 15n; ) {
+        testUnlock(int32max / i, -1n * i, FAIL_ERR_STR)
+        i += N
+    }
+
+    // fail if a * b > int32max
+
+    testUnlock(2n, int32max, FAIL_ERR_STR)
+    testUnlock(int32max, 2n, FAIL_ERR_STR)
+    for (let i = 1n; i < 2n ** 15n; ) {
+        const a = i
+        const b = int32max / i
+        const a_ = a >= b ? a : a + 1n
+        const b_ = b >= a ? b : b + 1n
+        testUnlock(a_, b_, FAIL_ERR_STR)
+        i += N
+    }
+
+    for (let i = 0; i < 100n; i++) {
+        const a = BigInt(Math.floor(Math.random() * 2 ** 16) + 2 ** 16)
+        testUnlock(a, int32max / a + 1n, FAIL_ERR_STR)
     }
 })

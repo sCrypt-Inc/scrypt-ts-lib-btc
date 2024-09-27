@@ -22,3 +22,4 @@ deploy.ts
 tsconfig-scryptTS.json
 artifacts/**/*.scrypt.map
 artifacts/**/*.transformer.json
+artifacts/**/*.json

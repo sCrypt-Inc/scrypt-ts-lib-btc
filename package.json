@@ -14,7 +14,7 @@
     "compileTest": "cd tests && npx scrypt-cli compile",
     "pretest": "npm run build && npm run compile && npm run compileTest",
     "test": "npm run test:mocha",
-    "test:mocha": "cd tests && cross-env NETWORK=local mocha",
+    "test:mocha": "cd tests && mocha",
     "pretest:testnet": "npm run build && npm run compile && npm run compileTest",
     "test:testnet": "cd tests && cross-env NETWORK=testnet mocha --no-timeouts",
     "genprivkey": "npx ts-node tests/utils/privateKey.ts",
