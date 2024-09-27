@@ -5,6 +5,7 @@ artifacts/
 **/.env
 **/scrypt.index.json
 tsconfig-scryptTS.json
+.eslintcache
 .vscode/*
 !.vscode/launch.json
 !.vscode/tasks.json
