@@ -1,4 +1,5 @@
-# Opmul
+# Smart contract libraries for BTC
+- Multiplication without `OP_MUL`
 
 ## Build
 
