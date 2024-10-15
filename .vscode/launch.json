@@ -5,6 +5,52 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "type": "scrypt",
+      "request": "launch",
+      "name": "Debug unlockU30",
+      "program": "${workspaceFolder}/tests/artifacts/contracts/testOpMul.scrypt",
+      "constructorArgs": [],
+      "pubFunc": "unlockU30",
+      "pubFuncArgs": [
+        {
+          "lo": "32767",
+          "hi": "32767"
+        },
+        {
+          "lo": "32767",
+          "hi": "32767"
+        },
+        {
+          "lo": {
+            "lo": "1",
+            "hi": "0"
+          },
+          "hi": {
+            "lo": "32766",
+            "hi": "32767"
+          }
+        }
+        // 210,
+        // 10000000
+      ]
+    },
+    {
+      "type": "scrypt",
+      "request": "launch",
+      "name": "Debug unlockU15",
+      "program": "${workspaceFolder}/tests/artifacts/contracts/testOpMul.scrypt",
+      "constructorArgs": [],
+      "pubFunc": "unlockU15",
+      "pubFuncArgs": [
+        32767,
+        32767,
+        {
+          "lo": 1,
+          "hi": 32766
+        }
+      ]
+    },
+    {
       "type": "node",
       "request": "launch",
       "name": "Launch opmul",

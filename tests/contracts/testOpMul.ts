@@ -1,5 +1,5 @@
 import { method, assert, SmartContract } from 'scrypt-ts'
-import { OpMul } from '../opmul'
+import { OpMul, UMath, U30, U60, U15 } from '../opmul'
 
 export class TestOpMul extends SmartContract {
     @method()
@@ -7,5 +7,17 @@ export class TestOpMul extends SmartContract {
         const c_ = OpMul.mul(a, b)
         assert(c_ == c, 'result not equal a*b')
         assert(c_ <= 2147483647, 'result overflow')
+    }
+
+    @method()
+    public unlockU15(a: U15, b: U15, c: U30) {
+        const c_ = UMath.mulU15(a, b)
+        assert(c_ == c, 'result not equal a*b')
+    }
+
+    @method()
+    public unlockU30(a: U30, b: U30, c: U60) {
+        const c_ = UMath.mulU30(a, b)
+        assert(c_ == c, 'result not equal a*b')
     }
 }
