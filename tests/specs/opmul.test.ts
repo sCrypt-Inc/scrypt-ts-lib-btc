@@ -53,36 +53,15 @@ describe('Test SmartContract `Opmul`', () => {
         const args: Array<U30 | U60 | U15> = []
 
         if (method === 'unlockU30') {
-            args.push({
-                lo: a % UMath.LIM_U15,
-                hi: a / UMath.LIM_U15,
-            })
+            args.push(UMath.toU30(a))
 
-            args.push({
-                lo: b % UMath.LIM_U15,
-                hi: b / UMath.LIM_U15,
-            })
+            args.push(UMath.toU30(b))
 
-            const cHi = c / UMath.LIM_U30
-            const clo = c % UMath.LIM_U30
-
-            args.push({
-                lo: {
-                    lo: clo % UMath.LIM_U15,
-                    hi: clo / UMath.LIM_U15,
-                },
-                hi: {
-                    lo: cHi % UMath.LIM_U15,
-                    hi: cHi / UMath.LIM_U15,
-                },
-            })
+            args.push(UMath.toU60(c))
         } else if (method === 'unlockU15') {
             args.push(a)
             args.push(b)
-            args.push({
-                lo: c % UMath.LIM_U15,
-                hi: c / UMath.LIM_U15,
-            })
+            args.push(UMath.toU30(c))
         } else if (method === 'unlock') {
             args.push(a)
             args.push(b)

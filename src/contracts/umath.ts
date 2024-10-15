@@ -37,6 +37,9 @@ export class UMath extends SmartContractLib {
     static readonly LIM_U30: bigint = 1073741824n // 2^30
 
     @prop()
+    static readonly LIM_U60: bigint = 1152921504606846976n // 2^60
+
+    @prop()
     static readonly NULL_U16: U16 = {
         hi: false,
         lo: 0n,
@@ -625,5 +628,30 @@ export class UMath extends SmartContractLib {
         }
 
         return { hi: hi30bit, lo: lo30bit }
+    }
+
+    static toU30(a: bigint): U30 {
+        assert(a >= 0n && a < UMath.LIM_U30, 'invalid U30')
+        return {
+            lo: a % UMath.LIM_U15,
+            hi: a / UMath.LIM_U15,
+        }
+    }
+
+    static toU60(a: bigint): U60 {
+        assert(a >= 0n && a < UMath.LIM_U60, 'invalid U60')
+        const hi = a / UMath.LIM_U30
+        const lo = a % UMath.LIM_U30
+
+        return {
+            lo: {
+                lo: lo % UMath.LIM_U15,
+                hi: lo / UMath.LIM_U15,
+            },
+            hi: {
+                lo: hi % UMath.LIM_U15,
+                hi: hi / UMath.LIM_U15,
+            },
+        }
     }
 }
