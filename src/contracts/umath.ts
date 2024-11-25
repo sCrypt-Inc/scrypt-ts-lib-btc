@@ -1,4 +1,5 @@
 import { FixedArray, SmartContractLib, assert, method, prop } from 'scrypt-ts'
+import { OpMul } from './opmul'
 
 export type U15 = bigint
 
@@ -15,6 +16,16 @@ export type U30 = {
 export type U31 = {
     hi: boolean
     lo: U30
+}
+
+export type U45 = {
+    hi: U15
+    lo: U30
+}
+
+export type U46 = {
+    hi: boolean
+    lo: U45
 }
 
 export type U60 = {
@@ -36,54 +47,61 @@ export class UMath extends SmartContractLib {
     @prop()
     static readonly LIM_U30: bigint = 1073741824n // 2^30
 
-    @prop()
-    static readonly NULL_U16: U16 = {
-        hi: false,
-        lo: 0n,
+    @method()
+    static null_U16(): U16 {
+        return {
+            hi: false,
+            lo: 0n,
+        }
     }
 
-    @prop()
-    static readonly NULL_U30: U30 = {
-        hi: 0n,
-        lo: 0n,
+    @method()
+    static null_U30(): U30 {
+        return {
+            hi: 0n,
+            lo: 0n,
+        }
     }
 
-    @prop()
-    static readonly NULL_U31: U31 = {
-        hi: false,
-        lo: UMath.NULL_U30,
+    @method()
+    static null_U31(): U31 {
+        return {
+            hi: false,
+            lo: UMath.null_U30(),
+        }
     }
 
-    @prop()
-    static readonly NULL_U60: U60 = {
-        hi: UMath.NULL_U30,
-        lo: UMath.NULL_U30,
+    @method()
+    static null_U45(): U45 {
+        return {
+            hi: 0n,
+            lo: UMath.null_U30(),
+        }
     }
 
-    @prop()
-    static readonly NULL_U61: U61 = {
-        hi: false,
-        lo: UMath.NULL_U60,
+    @method()
+    static null_U46(): U46 {
+        return {
+            hi: false,
+            lo: UMath.null_U45(),
+        }
     }
 
-    @prop()
-    static readonly NULL_U15_BITS: U15Bits = [
-        false,
-        false,
-        false,
-        false,
-        false,
-        false,
-        false,
-        false,
-        false,
-        false,
-        false,
-        false,
-        false,
-        false,
-        false,
-    ]
+    @method()
+    static null_U60(): U60 {
+        return {
+            hi: UMath.null_U30(),
+            lo: UMath.null_U30(),
+        }
+    }
+
+    @method()
+    static null_U61(): U61 {
+        return {
+            hi: false,
+            lo: UMath.null_U60(),
+        }
+    }
 
     /**
      * Checks limb value is within specified bounds [0, 2^15).
@@ -101,13 +119,27 @@ export class UMath extends SmartContractLib {
     }
 
     @method()
+    static checkU45(a: U45): boolean {
+        return UMath.checkU15(a.hi) && UMath.checkU30(a.lo)
+    }
+
+    @method()
     static checkU60(a: U60): boolean {
         return UMath.checkU30(a.hi) && UMath.checkU30(a.lo)
     }
 
     @method()
+    static toU30(a: bigint): U30 {
+        const res = OpMul.sliceU30(a)
+        return {
+            hi: res[0],
+            lo: res[1],
+        }
+    }
+
+    @method()
     static addU15Carry(a: U15, b: U15): U16 {
-        const res = UMath.NULL_U16
+        const res = UMath.null_U16()
         const sum = a + b
 
         if (sum >= UMath.LIM_U15) {
@@ -122,7 +154,7 @@ export class UMath extends SmartContractLib {
 
     @method()
     static addU30Carry(a: U30, b: U30): U31 {
-        const res = UMath.NULL_U31
+        const res = UMath.null_U31()
 
         const sum0 = a.lo + b.lo
         let carry0 = 0n
@@ -146,7 +178,7 @@ export class UMath extends SmartContractLib {
 
     @method()
     static subU15Borrow(a: U15, b: U15): U30 {
-        const res = UMath.NULL_U30
+        const res = UMath.null_U30()
 
         const diff = a - b
         if (a >= b) {
@@ -161,7 +193,7 @@ export class UMath extends SmartContractLib {
 
     @method()
     static subU30Borrow(a: U30, b: U30): U60 {
-        const res = UMath.NULL_U60
+        const res = UMath.null_U60()
 
         const diff0 = a.lo - b.lo
         let borrow0 = 0n
@@ -188,7 +220,7 @@ export class UMath extends SmartContractLib {
 
     @method()
     static addU60Carry(a: U60, b: U60): U61 {
-        const res = UMath.NULL_U61
+        const res = UMath.null_U61()
 
         const sum0 = a.lo.lo + b.lo.lo
         let carry0 = 0n
@@ -230,7 +262,7 @@ export class UMath extends SmartContractLib {
 
     @method()
     static subU60Borrow(a: U60, b: U60): U61 {
-        const res = UMath.NULL_U61
+        const res = UMath.null_U61()
 
         const diff0 = a.lo.lo - b.lo.lo
         let borrow0 = 0n
@@ -275,7 +307,7 @@ export class UMath extends SmartContractLib {
 
     @method()
     static addU60(a: U60, b: U60): U60 {
-        const res = UMath.NULL_U60
+        const res = UMath.null_U60()
 
         const sum0 = a.lo.lo + b.lo.lo
         let carry0 = 0n
@@ -314,7 +346,7 @@ export class UMath extends SmartContractLib {
 
     @method()
     static subU60(a: U60, b: U60): U60 {
-        const res = UMath.NULL_U60
+        const res = UMath.null_U60()
 
         const diff0 = a.lo.lo - b.lo.lo
         let borrow0 = 0n
@@ -359,6 +391,21 @@ export class UMath extends SmartContractLib {
     @method()
     static eqU30(a: U30, b: U30): boolean {
         return a.hi == b.hi && b.lo == b.lo
+    }
+
+    @method()
+    static eqU31(a: U31, b: U31): boolean {
+        return a.hi == b.hi && UMath.eqU30(a.lo, b.lo)
+    }
+
+    @method()
+    static eqU45(a: U45, b: U45): boolean {
+        return a.hi == b.hi && UMath.eqU30(a.lo, b.lo)
+    }
+
+    @method()
+    static eqU6(a: U46, b: U46): boolean {
+        return a.hi == b.hi && UMath.eqU45(a.lo, b.lo)
     }
 
     @method()
@@ -448,152 +495,9 @@ export class UMath extends SmartContractLib {
     }
 
     @method()
-    static num2BitsU15(a: U15): U15Bits {
-        const res = UMath.NULL_U15_BITS
-        if (a >= 16384n) {
-            a -= 16384n
-            res[0] = true
-        }
-        if (a >= 8192n) {
-            a -= 8192n
-            res[1] = true
-        }
-        if (a >= 4096n) {
-            a -= 4096n
-            res[2] = true
-        }
-        if (a >= 2048n) {
-            a -= 2048n
-            res[3] = true
-        }
-        if (a >= 1024n) {
-            a -= 1024n
-            res[4] = true
-        }
-        if (a >= 512n) {
-            a -= 512n
-            res[5] = true
-        }
-        if (a >= 256n) {
-            a -= 256n
-            res[6] = true
-        }
-        if (a >= 128n) {
-            a -= 128n
-            res[7] = true
-        }
-        if (a >= 64n) {
-            a -= 64n
-            res[8] = true
-        }
-        if (a >= 32n) {
-            a -= 32n
-            res[9] = true
-        }
-        if (a >= 16n) {
-            a -= 16n
-            res[10] = true
-        }
-        if (a >= 8n) {
-            a -= 8n
-            res[11] = true
-        }
-        if (a >= 4n) {
-            a -= 4n
-            res[12] = true
-        }
-        if (a >= 2n) {
-            a -= 2n
-            res[13] = true
-        }
-        if (a >= 1n) {
-            res[14] = true
-        }
-
-        return res
-    }
-
-    @method()
     static mulU15(a: U15, b: U15): U30 {
-        // Split b into a bit array.
-        const bBits = UMath.num2BitsU15(b)
-
-        // Perform multiplication. Res up to 30 bits long.
-        let res = 0n
-        for (let i = 0; i < 15; i++) {
-            if (bBits[14 - i]) {
-                res += a
-            }
-            a += a
-        }
-
-        // Split res to two 15 bit limbs.
-        let x = 0n
-        if (res >= 536870912n) {
-            x += 16384n
-            res -= 536870912n
-        }
-        if (res >= 268435456n) {
-            x += 8192n
-            res -= 268435456n
-        }
-        if (res >= 134217728n) {
-            x += 4096n
-            res -= 134217728n
-        }
-        if (res >= 67108864n) {
-            x += 2048n
-            res -= 67108864n
-        }
-        if (res >= 33554432n) {
-            x += 1024n
-            res -= 33554432n
-        }
-        if (res >= 16777216n) {
-            x += 512n
-            res -= 16777216n
-        }
-        if (res >= 8388608n) {
-            x += 256n
-            res -= 8388608n
-        }
-        if (res >= 4194304n) {
-            x += 128n
-            res -= 4194304n
-        }
-        if (res >= 2097152n) {
-            x += 64n
-            res -= 2097152n
-        }
-        if (res >= 1048576n) {
-            x += 32n
-            res -= 1048576n
-        }
-        if (res >= 524288n) {
-            x += 16n
-            res -= 524288n
-        }
-        if (res >= 262144n) {
-            x += 8n
-            res -= 262144n
-        }
-        if (res >= 131072n) {
-            x += 4n
-            res -= 131072n
-        }
-        if (res >= 65536n) {
-            x += 2n
-            res -= 65536n
-        }
-        if (res >= 32768n) {
-            x += 1n
-            res -= 32768n
-        }
-
-        return {
-            hi: x,
-            lo: res,
-        }
+        const res = OpMul.u15Mul(a, b)
+        return UMath.toU30(res)
     }
 
     @method()
@@ -625,5 +529,25 @@ export class UMath extends SmartContractLib {
         }
 
         return { hi: hi30bit, lo: lo30bit }
+    }
+
+    @method()
+    static mulU45(a: U45, b: U15): U60 {
+        const bU30: U30 = {
+            hi: 0n,
+            lo: b,
+        }
+
+        const lobit = UMath.mulU30(a.lo, bU30)
+
+        const hibit: U60 = {
+            hi: UMath.mulU15(a.hi, b),
+            lo: {
+                hi: 0n,
+                lo: 0n,
+            },
+        }
+
+        return UMath.addU60(hibit, lobit)
     }
 }

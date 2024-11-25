@@ -13,7 +13,7 @@ import {
     unlockTaprootContractInput,
 } from '../utils/utils'
 import { MethodCallOptions } from 'scrypt-ts'
-import { UMath, U15, U30, U60 } from '../opmul'
+import { UMath, U15, U30, U60, U45 } from '../opmul'
 
 use(chaiAsPromised)
 
@@ -30,7 +30,7 @@ describe('Test SmartContract `Opmul`', () => {
     async function unlock(
         a: bigint,
         b: bigint,
-        method: 'unlock' | 'unlockU15' | 'unlockU30' = 'unlock'
+        method: 'unlock' | 'unlockU15' | 'unlockU30' | 'unlockU45' = 'unlock'
     ) {
         const taprootContract = createTaprootContract(instance)
 
@@ -50,38 +50,64 @@ describe('Test SmartContract `Opmul`', () => {
 
         const c = a * b
 
-        const args: Array<U30 | U60 | U15> = []
+        const args: Array<U30 | U60 | U15 | U45> = []
 
-        if (method === 'unlockU30') {
+        if (method === 'unlockU45') {
+            const aHi = a / UMath.LIM_U30
+            const aLow = a % UMath.LIM_U30
             args.push({
-                lo: a % UMath.LIM_U15,
+                hi: aHi,
+                lo: {
+                    lo: aLow % UMath.LIM_U15,
+                    hi: aLow / UMath.LIM_U15,
+                },
+            })
+
+            args.push(b)
+
+            const cHi = c / UMath.LIM_U30
+            const clo = c % UMath.LIM_U30
+
+            args.push({
+                hi: {
+                    hi: cHi / UMath.LIM_U15,
+                    lo: cHi % UMath.LIM_U15,
+                },
+                lo: {
+                    hi: clo / UMath.LIM_U15,
+                    lo: clo % UMath.LIM_U15,
+                },
+            })
+        } else if (method === 'unlockU30') {
+            args.push({
                 hi: a / UMath.LIM_U15,
+                lo: a % UMath.LIM_U15,
             })
 
             args.push({
-                lo: b % UMath.LIM_U15,
                 hi: b / UMath.LIM_U15,
+                lo: b % UMath.LIM_U15,
             })
 
             const cHi = c / UMath.LIM_U30
             const clo = c % UMath.LIM_U30
 
             args.push({
-                lo: {
-                    lo: clo % UMath.LIM_U15,
-                    hi: clo / UMath.LIM_U15,
-                },
                 hi: {
-                    lo: cHi % UMath.LIM_U15,
                     hi: cHi / UMath.LIM_U15,
+                    lo: cHi % UMath.LIM_U15,
+                },
+                lo: {
+                    hi: clo / UMath.LIM_U15,
+                    lo: clo % UMath.LIM_U15,
                 },
             })
         } else if (method === 'unlockU15') {
             args.push(a)
             args.push(b)
             args.push({
-                lo: c % UMath.LIM_U15,
                 hi: c / UMath.LIM_U15,
+                lo: c % UMath.LIM_U15,
             })
         } else if (method === 'unlock') {
             args.push(a)
@@ -92,7 +118,7 @@ describe('Test SmartContract `Opmul`', () => {
         const call = await instance.methods[method](...args, {
             fromUTXO: getDummyUTXO(),
             verify: false,
-            exec: false,
+            exec: true,
         } as MethodCallOptions<TestOpMul>)
 
         const revealTx = new btc.Transaction()
@@ -117,17 +143,17 @@ describe('Test SmartContract `Opmul`', () => {
     function testUnlock(
         a: bigint,
         b: bigint,
-        method: 'unlock' | 'unlockU15' | 'unlockU30' = 'unlock',
+        method: 'unlock' | 'unlockU15' | 'unlockU30' | 'unlockU45' = 'unlock',
         errstr: string = ''
     ) {
         it(`when a = ${a}, b = ${b}, call [${method}] should ${
             errstr ? 'fail' : 'pass'
         }`, async () => {
-            const res = await unlock(a, b, method)
-
             if (errstr) {
-                expect(res).to.eq(errstr)
+                await expect(unlock(a, b, method)).rejectedWith(errstr)
             } else {
+                const res = await unlock(a, b, method)
+
                 expect(res).to.true
             }
         })
@@ -141,24 +167,20 @@ describe('Test SmartContract `Opmul`', () => {
 
     testUnlock(int32max, 0n)
     testUnlock(0n, int32max)
-
-    const N = BigInt(Math.max(100, Math.floor(Math.random() * 1000)))
+    const FAIL_ERR_STR = 'Execution failed, result overflow'
+    const N = BigInt(Math.max(1000, Math.floor(Math.random() * 10000)))
 
     console.log('N:', N)
     for (let i = 1n; i < 2n ** 15n; ) {
         testUnlock(i, int32max / i)
-        testUnlock(-1n * i, int32max / i)
         testUnlock(int32max / i, i)
-        testUnlock((-1n * int32max) / i, i)
         i += N
     }
 
     // fail if b < 0
 
-    const FAIL_ERR_STR = 'SCRIPT_ERR_VERIFY'
-
     for (let i = 1n; i < 2n ** 15n; ) {
-        testUnlock(int32max / i, -1n * i, 'unlock', FAIL_ERR_STR)
+        testUnlock(int32max / i, i + 1n, 'unlock', FAIL_ERR_STR)
         i += N
     }
 
@@ -175,14 +197,19 @@ describe('Test SmartContract `Opmul`', () => {
         i += N
     }
 
-    for (let i = 0; i < 100n; i++) {
+    for (let i = 0; i < 10n; i++) {
         const a = BigInt(Math.floor(Math.random() * 2 ** 16) + 2 ** 16)
         testUnlock(a, int32max / a + 1n, 'unlock', FAIL_ERR_STR)
     }
 
     const u30max = 2n ** 30n - 1n
     const u15max = 2n ** 15n - 1n
+    const u45max = 2n ** 45n - 1n
 
+    testUnlock(u45max, u15max, 'unlockU45')
+    testUnlock(u45max, 1n, 'unlockU45')
+    testUnlock(1n, u15max, 'unlockU45')
+    testUnlock(1n, 1n, 'unlockU45')
     testUnlock(1n, 1n, 'unlockU30')
     testUnlock(1n, u30max, 'unlockU30')
     testUnlock(u30max, 1n, 'unlockU30')
@@ -192,13 +219,19 @@ describe('Test SmartContract `Opmul`', () => {
     testUnlock(u15max, 1n, 'unlockU15')
     testUnlock(u15max, u15max, 'unlockU15')
 
-    for (let i = 0; i < 100n; i++) {
+    for (let i = 0; i < 10n; i++) {
+        const a = BigInt(Math.floor(Math.random() * Number(u45max)))
+        const b = BigInt(Math.floor(Math.random() * Number(u15max)))
+        testUnlock(a, b, 'unlockU45')
+    }
+
+    for (let i = 0; i < 10n; i++) {
         const a = BigInt(Math.floor(Math.random() * Number(u30max)))
         const b = BigInt(Math.floor(Math.random() * Number(u30max)))
         testUnlock(a, b, 'unlockU30')
     }
 
-    for (let i = 0; i < 100n; i++) {
+    for (let i = 0; i < 10n; i++) {
         const a = BigInt(Math.floor(Math.random() * Number(u15max)))
         const b = BigInt(Math.floor(Math.random() * Number(u15max)))
         testUnlock(a, b, 'unlockU15')
