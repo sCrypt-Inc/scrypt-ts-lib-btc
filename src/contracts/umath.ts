@@ -1,4 +1,4 @@
-import { FixedArray, SmartContractLib, assert, method, prop } from 'scrypt-ts'
+import { SmartContractLib, assert, method, prop } from 'scrypt-ts'
 import { OpMul } from './opmul'
 
 export type U15 = bigint
@@ -38,7 +38,25 @@ export type U61 = {
     lo: U60
 }
 
-export type U15Bits = FixedArray<boolean, 15>
+export type U75 = {
+    hi: U15
+    lo: U60
+}
+
+export type U76 = {
+    hi: boolean
+    lo: U75
+}
+
+export type U90 = {
+    hi: U30
+    lo: U60
+}
+
+export type U91 = {
+    hi: boolean
+    lo: U90
+}
 
 export class UMath extends SmartContractLib {
     @prop()
@@ -46,6 +64,18 @@ export class UMath extends SmartContractLib {
 
     @prop()
     static readonly LIM_U30: bigint = 1073741824n // 2^30
+
+    @prop()
+    static readonly LIM_U45: bigint = 35184372088832n // 2^45
+
+    @prop()
+    static readonly LIM_U60: bigint = 1152921504606846976n // 2^60
+
+    @prop()
+    static readonly LIM_U75: bigint = 37778931862957161709568n // 2^75
+
+    @prop()
+    static readonly LIM_U90: bigint = 1237940039285380274899124224n // 2^90
 
     @method()
     static null_U16(): U16 {
@@ -103,6 +133,38 @@ export class UMath extends SmartContractLib {
         }
     }
 
+    @method()
+    static null_U75(): U75 {
+        return {
+            hi: 0n,
+            lo: UMath.null_U60(),
+        }
+    }
+
+    @method()
+    static null_U76(): U76 {
+        return {
+            hi: false,
+            lo: UMath.null_U75(),
+        }
+    }
+
+    @method()
+    static null_U90(): U90 {
+        return {
+            hi: UMath.null_U30(),
+            lo: UMath.null_U60(),
+        }
+    }
+
+    @method()
+    static null_U91(): U91 {
+        return {
+            hi: false,
+            lo: UMath.null_U90(),
+        }
+    }
+
     /**
      * Checks limb value is within specified bounds [0, 2^15).
      * @param a
@@ -130,10 +192,73 @@ export class UMath extends SmartContractLib {
 
     @method()
     static toU30(a: bigint): U30 {
+        assert(a < UMath.LIM_U30, 'Invalid U30!')
         const res = OpMul.sliceU30(a)
         return {
             hi: res[0],
             lo: res[1],
+        }
+    }
+
+    // CAN'T BE USED IN CONTRACT
+    static toU45(c: bigint): U45 {
+        assert(c < UMath.LIM_U45, 'Invalid U45!')
+        const cHi = c / UMath.LIM_U30
+        const cLo = c % UMath.LIM_U30
+        return {
+            hi: cHi,
+            lo: {
+                hi: cLo / UMath.LIM_U15,
+                lo: cLo % UMath.LIM_U15,
+            },
+        }
+    }
+
+    // CAN'T BE USED IN CONTRACT
+    static toU46(c: bigint): U46 {
+        const cHi = c / UMath.LIM_U45
+
+        assert(cHi <= 1, 'Invalid U46!')
+
+        const clo = c % UMath.LIM_U45
+
+        return {
+            hi: cHi > 0 ? true : false,
+            lo: UMath.toU45(clo),
+        }
+    }
+
+    // CAN'T BE USED IN CONTRACT
+    static toU60(c: bigint): U60 {
+        assert(c < UMath.LIM_U60, 'Invalid U60!')
+        const cHi = c / UMath.LIM_U30
+        const cLo = c % UMath.LIM_U30
+        return {
+            hi: UMath.toU30(cHi),
+            lo: UMath.toU30(cLo),
+        }
+    }
+
+    // CAN'T BE USED IN CONTRACT
+    static toU75(c: bigint): U75 {
+        assert(c < UMath.LIM_U75, 'Invalid U75!')
+        const cHi = c / UMath.LIM_U60
+        const cLo = c % UMath.LIM_U60
+
+        return {
+            hi: cHi,
+            lo: UMath.toU60(cLo),
+        }
+    }
+
+    // CAN'T BE USED IN CONTRACT
+    static toU90(c: bigint): U90 {
+        assert(c < UMath.LIM_U90, 'Invalid U90!')
+        const cHi = c / UMath.LIM_U60
+        const cLo = c % UMath.LIM_U60
+        return {
+            hi: UMath.toU30(cHi),
+            lo: UMath.toU60(cLo),
         }
     }
 
@@ -149,6 +274,41 @@ export class UMath extends SmartContractLib {
             res.lo = sum
         }
 
+        return res
+    }
+
+    @method()
+    static add3U15Carry(a: U15, b: U15, c: U15): U16 {
+        const res = UMath.null_U16()
+        const sum = a + b + c
+
+        if (sum >= UMath.LIM_U15) {
+            res.lo = sum - UMath.LIM_U15
+            res.hi = true
+        } else {
+            res.lo = sum
+        }
+
+        return res
+    }
+
+    @method()
+    static addU30(a: U30, b: U30): U30 {
+        const res = UMath.null_U30()
+
+        const sum0 = a.lo + b.lo
+        let carry0 = 0n
+        if (sum0 >= UMath.LIM_U15) {
+            res.lo = sum0 - UMath.LIM_U15
+            carry0 = 1n
+        } else {
+            res.lo = sum0
+        }
+
+        const sum1 = a.hi + b.hi + carry0
+
+        assert(sum1 < UMath.LIM_U15, 'a carry occurred!')
+        res.hi = sum1
         return res
     }
 
@@ -173,6 +333,20 @@ export class UMath extends SmartContractLib {
             res.lo.hi = sum1
         }
 
+        return res
+    }
+
+    @method()
+    static addU45Carry(a: U45, b: U45): U46 {
+        const res = UMath.null_U46()
+
+        const lo = UMath.addU30Carry(a.lo, b.lo)
+
+        const hi = UMath.add3U15Carry(a.hi, b.hi, lo.hi ? 1n : 0n)
+
+        res.hi = hi.hi
+        res.lo.hi = hi.lo
+        res.lo.lo = lo.lo
         return res
     }
 
@@ -384,6 +558,37 @@ export class UMath extends SmartContractLib {
     }
 
     @method()
+    static addU75(a: U75, b: U75): U75 {
+        const res = UMath.null_U75()
+
+        const sum0 = UMath.addU60Carry(a.lo, b.lo)
+
+        const sum1 = a.hi + b.hi + (sum0.hi ? 1n : 0n)
+
+        assert(sum1 < UMath.LIM_U15)
+
+        res.hi = sum1
+        res.lo = sum0.lo
+        return res
+    }
+
+    @method()
+    static addU90(a: U90, b: U90): U90 {
+        const res = UMath.null_U90()
+
+        const sum0 = UMath.addU60Carry(a.lo, b.lo)
+
+        const sum1 = UMath.addU30(a.hi, b.hi)
+
+        res.hi = UMath.addU30(sum1, {
+            hi: 0n,
+            lo: sum0.hi ? 1n : 0n,
+        })
+        res.lo = sum0.lo
+        return res
+    }
+
+    @method()
     static eqU15(a: U15, b: U15): boolean {
         return a == b
     }
@@ -404,7 +609,7 @@ export class UMath extends SmartContractLib {
     }
 
     @method()
-    static eqU6(a: U46, b: U46): boolean {
+    static eqU46(a: U46, b: U46): boolean {
         return a.hi == b.hi && UMath.eqU45(a.lo, b.lo)
     }
 
@@ -532,7 +737,35 @@ export class UMath extends SmartContractLib {
     }
 
     @method()
-    static mulU45(a: U45, b: U15): U60 {
+    static mulU45(a: U45, b: U45): U90 {
+        const lobit = UMath.mulU45U30(b, a.lo)
+
+        const hibit = UMath.mulU45U15(b, a.hi)
+
+        const lobitU90: U90 = {
+            hi: {
+                hi: 0n,
+                lo: lobit.hi,
+            },
+            lo: lobit.lo,
+        }
+
+        const hibitU90: U90 = {
+            hi: hibit.hi,
+            lo: {
+                hi: hibit.lo,
+                lo: {
+                    hi: 0n,
+                    lo: 0n,
+                },
+            },
+        }
+
+        return UMath.addU90(lobitU90, hibitU90)
+    }
+
+    @method()
+    static mulU45U15(a: U45, b: U15): U60 {
         const bU30: U30 = {
             hi: 0n,
             lo: b,
@@ -549,5 +782,97 @@ export class UMath extends SmartContractLib {
         }
 
         return UMath.addU60(hibit, lobit)
+    }
+
+    @method()
+    static mulU60U15(a: U60, b: U15): U75 {
+        const bU30: U30 = {
+            hi: 0n,
+            lo: b,
+        }
+
+        const lobit = UMath.mulU30(a.lo, bU30)
+
+        const hibit = UMath.mulU30(a.hi, bU30)
+
+        const lobitU75: U75 = {
+            hi: 0n,
+            lo: lobit,
+        }
+
+        const hibitU75: U75 = {
+            hi: hibit.hi.lo,
+            lo: {
+                hi: {
+                    hi: hibit.lo.hi,
+                    lo: hibit.lo.lo,
+                },
+                lo: {
+                    hi: 0n,
+                    lo: 0n,
+                },
+            },
+        }
+
+        return UMath.addU75(lobitU75, hibitU75)
+    }
+
+    @method()
+    static mulU60U30(a: U60, b: U30): U90 {
+        const lobit = UMath.mulU30(a.lo, b)
+
+        const hibit = UMath.mulU30(a.hi, b)
+
+        const lobitU90: U90 = {
+            hi: UMath.null_U30(),
+            lo: lobit,
+        }
+
+        const hibitU90: U90 = {
+            hi: hibit.hi,
+            lo: {
+                hi: hibit.lo,
+                lo: {
+                    hi: 0n,
+                    lo: 0n,
+                },
+            },
+        }
+
+        return UMath.addU90(lobitU90, hibitU90)
+    }
+
+    @method()
+    static mulU45U30(a: U45, b: U30): U75 {
+        const lobit = UMath.mulU30(a.lo, b)
+
+        const hibit = UMath.mulU30(
+            {
+                hi: 0n,
+                lo: a.hi,
+            },
+            b
+        )
+
+        const lobitU75: U75 = {
+            hi: 0n,
+            lo: lobit,
+        }
+
+        const hibitU75: U75 = {
+            hi: hibit.hi.lo,
+            lo: {
+                hi: {
+                    hi: hibit.lo.hi,
+                    lo: hibit.lo.lo,
+                },
+                lo: {
+                    hi: 0n,
+                    lo: 0n,
+                },
+            },
+        }
+
+        return UMath.addU75(lobitU75, hibitU75)
     }
 }

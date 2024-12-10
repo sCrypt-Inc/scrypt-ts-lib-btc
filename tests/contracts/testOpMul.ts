@@ -1,5 +1,5 @@
 import { method, assert, SmartContract, equals } from 'scrypt-ts'
-import { OpMul, UMath, U30, U60, U15, U45 } from '../opmul'
+import { OpMul, UMath, U30, U60, U15, U45, U75, U90 } from '../opmul'
 
 export class TestOpMul extends SmartContract {
     @method()
@@ -22,8 +22,32 @@ export class TestOpMul extends SmartContract {
     }
 
     @method()
-    public unlockU45(a: U45, b: U15, c: U60) {
+    public unlockU45(a: U45, b: U45, c: U90) {
         const c_ = UMath.mulU45(a, b)
+        assert(equals(c_, c), 'result not equal a*b')
+    }
+
+    @method()
+    public unlockU45U15(a: U45, b: U15, c: U60) {
+        const c_ = UMath.mulU45U15(a, b)
+        assert(equals(c_, c), 'result not equal a*b')
+    }
+
+    @method()
+    public unlockU60U15(a: U60, b: U15, c: U75) {
+        const c_ = UMath.mulU60U15(a, b)
+        assert(equals(c_, c), 'result not equal a*b')
+    }
+
+    @method()
+    public unlockU60U30(a: U60, b: U30, c: U90) {
+        const c_ = UMath.mulU60U30(a, b)
+        assert(equals(c_, c), 'result not equal a*b')
+    }
+
+    @method()
+    public unlockU45U30(a: U45, b: U30, c: U75) {
+        const c_ = UMath.mulU45U30(a, b)
         assert(equals(c_, c), 'result not equal a*b')
     }
 }
