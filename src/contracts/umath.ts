@@ -200,6 +200,13 @@ export class UMath extends SmartContractLib {
         }
     }
 
+    @method()
+    static fromU30(a: U30): bigint {
+        let tmp = OpMul.u15Mul(a.hi, UMath.LIM_U15 - 1n)
+        tmp += a.hi
+        return tmp + a.lo
+    }
+
     // CAN'T BE USED IN CONTRACT
     static toU45(c: bigint): U45 {
         assert(c < UMath.LIM_U45, 'Invalid U45!')
