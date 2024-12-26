@@ -709,7 +709,7 @@ export class UMath extends SmartContractLib {
 
     @method()
     static eqU30(a: U30, b: U30): boolean {
-        return a.hi == b.hi && b.lo == b.lo
+        return a.hi == b.hi && a.lo == b.lo
     }
 
     @method()
@@ -754,10 +754,54 @@ export class UMath extends SmartContractLib {
     }
 
     @method()
+    static lteU30(a: U30, b: U30): boolean {
+        let res = false
+        if (a.hi == b.hi) {
+            res = a.lo <= b.lo
+        } else {
+            res = a.hi < b.hi
+        }
+        return res
+    }
+
+    @method()
+    static ltU45(a: U45, b: U45): boolean {
+        let res = false
+        if (a.hi == b.hi) {
+            res = UMath.ltU30(a.lo, b.lo)
+        } else {
+            res = a.hi < b.hi
+        }
+        return res
+    }
+
+    @method()
+    static lteU45(a: U45, b: U45): boolean {
+        let res = false
+        if (a.hi == b.hi) {
+            res = UMath.lteU30(a.lo, b.lo)
+        } else {
+            res = a.hi < b.hi
+        }
+        return res
+    }
+
+    @method()
     static ltU60(a: U60, b: U60): boolean {
         let res = false
         if (UMath.eqU30(a.hi, b.hi)) {
             res = UMath.ltU30(a.lo, b.lo)
+        } else {
+            res = UMath.ltU30(a.hi, b.hi)
+        }
+        return res
+    }
+
+    @method()
+    static lteU60(a: U60, b: U60): boolean {
+        let res = false
+        if (UMath.eqU30(a.hi, b.hi)) {
+            res = UMath.lteU30(a.lo, b.lo)
         } else {
             res = UMath.ltU30(a.hi, b.hi)
         }
@@ -776,8 +820,24 @@ export class UMath extends SmartContractLib {
     }
 
     @method()
+    static lteU61(a: U61, b: U61): boolean {
+        let res = false
+        if (a.hi == b.hi) {
+            res = UMath.lteU60(a.lo, b.lo)
+        } else {
+            res = a.hi == false && b.hi == true
+        }
+        return res
+    }
+
+    @method()
     static gtU15(a: U15, b: U15): boolean {
         return a > b
+    }
+
+    @method()
+    static gteU15(a: U15, b: U15): boolean {
+        return a >= b
     }
 
     @method()
@@ -785,6 +845,39 @@ export class UMath extends SmartContractLib {
         let res = false
         if (a.hi == b.hi) {
             res = a.lo > b.lo
+        } else {
+            res = a.hi > b.hi
+        }
+        return res
+    }
+
+    @method()
+    static gteU30(a: U30, b: U30): boolean {
+        let res = false
+        if (a.hi == b.hi) {
+            res = a.lo >= b.lo
+        } else {
+            res = a.hi > b.hi
+        }
+        return res
+    }
+
+    @method()
+    static gtU45(a: U45, b: U45): boolean {
+        let res = false
+        if (a.hi == b.hi) {
+            res = UMath.gtU30(a.lo, b.lo)
+        } else {
+            res = a.hi > b.hi
+        }
+        return res
+    }
+
+    @method()
+    static gteU45(a: U45, b: U45): boolean {
+        let res = false
+        if (a.hi == b.hi) {
+            res = UMath.gteU30(a.lo, b.lo)
         } else {
             res = a.hi > b.hi
         }
@@ -803,10 +896,32 @@ export class UMath extends SmartContractLib {
     }
 
     @method()
+    static gteU60(a: U60, b: U60): boolean {
+        let res = false
+        if (UMath.eqU30(a.hi, b.hi)) {
+            res = UMath.gteU30(a.lo, b.lo)
+        } else {
+            res = UMath.gtU30(a.hi, b.hi)
+        }
+        return res
+    }
+
+    @method()
     static gtU61(a: U61, b: U61): boolean {
         let res = false
         if (a.hi == b.hi) {
             res = UMath.gtU60(a.lo, b.lo)
+        } else {
+            res = a.hi == true && b.hi == false
+        }
+        return res
+    }
+
+    @method()
+    static gteU61(a: U61, b: U61): boolean {
+        let res = false
+        if (a.hi == b.hi) {
+            res = UMath.gteU60(a.lo, b.lo)
         } else {
             res = a.hi == true && b.hi == false
         }
