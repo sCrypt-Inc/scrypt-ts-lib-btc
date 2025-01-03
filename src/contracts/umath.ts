@@ -1,5 +1,23 @@
-import { SmartContractLib, assert, method, prop } from 'scrypt-ts'
+import {
+    ByteString,
+    FixedArray,
+    SmartContractLib,
+    assert,
+    fill,
+    int2ByteString,
+    method,
+    prop,
+    toByteString,
+} from 'scrypt-ts'
 import { OpMul } from './opmul'
+
+export type bit = bigint
+
+export const Bit = BigInt
+
+export type uint8 = bigint
+
+export const Uint8 = BigInt
 
 export type U15 = bigint
 
@@ -32,6 +50,8 @@ export type U60 = {
     hi: U30
     lo: U30
 }
+
+export type BitU60 = FixedArray<bit, 60>
 
 export type U61 = {
     hi: boolean
@@ -1103,5 +1123,250 @@ export class UMath extends SmartContractLib {
         }
 
         return UMath.addU75(lobitU75, hibitU75)
+    }
+
+    // CAN'T BE USED IN CONTRACT
+    static toBitU60(v: bigint): BitU60 {
+        const r = fill(0n, 60)
+        for (let index = 0; index < 60; index++) {
+            r[index] = v & 1n
+            v = v >> 1n
+        }
+        return r
+    }
+
+    @method()
+    static bitU8ToByte(
+        bit0: bit,
+        bit1: bit,
+        bit2: bit,
+        bit3: bit,
+        bit4: bit,
+        bit5: bit,
+        bit6: bit,
+        bit7: bit
+    ): ByteString {
+        return UMath.uint8ToByte(
+            (bit0 ? 1n : 0n) +
+                (bit1 ? 2n : 0n) +
+                (bit2 ? 4n : 0n) +
+                (bit3 ? 8n : 0n) +
+                (bit4 ? 16n : 0n) +
+                (bit5 ? 32n : 0n) +
+                (bit6 ? 64n : 0n) +
+                (bit7 ? 128n : 0n)
+        )
+    }
+
+    @method()
+    static bit4ToU8Byte(
+        bit0: bit,
+        bit1: bit,
+        bit2: bit,
+        bit3: bit
+    ): ByteString {
+        return UMath.uint8ToByte(
+            (bit0 ? 1n : 0n) +
+                (bit1 ? 2n : 0n) +
+                (bit2 ? 4n : 0n) +
+                (bit3 ? 8n : 0n)
+        )
+    }
+
+    @method()
+    static uint8ToByte(v: uint8): ByteString {
+        assert(v < 256n)
+        let r = int2ByteString(v)
+        if (v == 0n) {
+            r = toByteString('00')
+        } else if (v == 128n) {
+            r = toByteString('80')
+        } else if (v > 128n) {
+            r = int2ByteString(-(v - 128n))
+        }
+        return r
+    }
+
+    @method()
+    static bit15ToU15(
+        bit0: bit,
+        bit1: bit,
+        bit2: bit,
+        bit3: bit,
+        bit4: bit,
+        bit5: bit,
+        bit6: bit,
+        bit7: bit,
+        bit8: bit,
+        bit9: bit,
+        bit10: bit,
+        bit11: bit,
+        bit12: bit,
+        bit13: bit,
+        bit14: bit
+    ): U15 {
+        return (
+            (bit0 ? 1n : 0n) +
+            (bit1 ? 2n : 0n) +
+            (bit2 ? 4n : 0n) +
+            (bit3 ? 8n : 0n) +
+            (bit4 ? 16n : 0n) +
+            (bit5 ? 32n : 0n) +
+            (bit6 ? 64n : 0n) +
+            (bit7 ? 128n : 0n) +
+            (bit8 ? 256n : 0n) +
+            (bit9 ? 512n : 0n) +
+            (bit10 ? 1024n : 0n) +
+            (bit11 ? 2048n : 0n) +
+            (bit12 ? 4096n : 0n) +
+            (bit13 ? 8192n : 0n) +
+            (bit14 ? 16384n : 0n)
+        )
+    }
+
+    @method()
+    static bitU60ToU60(a: BitU60): U60 {
+        return {
+            hi: {
+                hi: UMath.bit15ToU15(
+                    a[45],
+                    a[46],
+                    a[47],
+                    a[48],
+                    a[49],
+                    a[50],
+                    a[51],
+                    a[52],
+                    a[53],
+                    a[54],
+                    a[55],
+                    a[56],
+                    a[57],
+                    a[58],
+                    a[59]
+                ),
+                lo: UMath.bit15ToU15(
+                    a[30],
+                    a[31],
+                    a[32],
+                    a[33],
+                    a[34],
+                    a[35],
+                    a[36],
+                    a[37],
+                    a[38],
+                    a[39],
+                    a[40],
+                    a[41],
+                    a[42],
+                    a[43],
+                    a[44]
+                ),
+            },
+            lo: {
+                hi: UMath.bit15ToU15(
+                    a[15],
+                    a[16],
+                    a[17],
+                    a[18],
+                    a[19],
+                    a[20],
+                    a[21],
+                    a[22],
+                    a[23],
+                    a[24],
+                    a[25],
+                    a[26],
+                    a[27],
+                    a[28],
+                    a[29]
+                ),
+                lo: UMath.bit15ToU15(
+                    a[0],
+                    a[1],
+                    a[2],
+                    a[3],
+                    a[4],
+                    a[5],
+                    a[6],
+                    a[7],
+                    a[8],
+                    a[9],
+                    a[10],
+                    a[11],
+                    a[12],
+                    a[13],
+                    a[14]
+                ),
+            },
+        }
+    }
+
+    @method()
+    static bitU60ToByteString(a: BitU60): ByteString {
+        return (
+            UMath.bitU8ToByte(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7]) +
+            UMath.bitU8ToByte(
+                a[8],
+                a[9],
+                a[10],
+                a[11],
+                a[12],
+                a[13],
+                a[14],
+                a[15]
+            ) +
+            UMath.bitU8ToByte(
+                a[16],
+                a[17],
+                a[18],
+                a[19],
+                a[20],
+                a[21],
+                a[22],
+                a[23]
+            ) +
+            UMath.bitU8ToByte(
+                a[24],
+                a[25],
+                a[26],
+                a[27],
+                a[28],
+                a[29],
+                a[30],
+                a[31]
+            ) +
+            UMath.bitU8ToByte(
+                a[32],
+                a[33],
+                a[34],
+                a[35],
+                a[36],
+                a[37],
+                a[38],
+                a[39]
+            ) +
+            UMath.bitU8ToByte(
+                a[40],
+                a[41],
+                a[42],
+                a[43],
+                a[44],
+                a[45],
+                a[46],
+                a[47]
+            ) +
+            UMath.bitU8ToByte(
+                a[48],
+                a[49],
+                a[50],
+                a[51],
+                a[52],
+                a[53],
+                a[54],
+                a[55]
+            ) +
+            UMath.bit4ToU8Byte(a[56], a[57], a[58], a[59])
+        )
     }
 }
